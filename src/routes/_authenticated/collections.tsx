@@ -65,7 +65,9 @@ function CollectionsPage() {
     return (
       <Card className="max-w-md">
         <CardContent className="py-10 text-center space-y-3">
-          <p className="text-muted-foreground">Add an active customer before recording collections.</p>
+          <p className="text-muted-foreground">
+            Add an active customer before recording collections.
+          </p>
           <Button onClick={() => navigate({ to: "/customers" })}>Add customer</Button>
         </CardContent>
       </Card>
@@ -83,9 +85,13 @@ function CollectionsPage() {
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-5">
             <div className="space-y-1.5">
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Customer</Label>
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                Customer
+              </Label>
               <Select value={customerId} onValueChange={onCustomerChange}>
-                <SelectTrigger><SelectValue placeholder="Pick customer" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pick customer" />
+                </SelectTrigger>
                 <SelectContent>
                   {activeCustomers.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
@@ -98,7 +104,9 @@ function CollectionsPage() {
 
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Amount (₦)</Label>
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Amount (₦)
+                </Label>
                 <Input
                   type="number"
                   min={0}
@@ -110,13 +118,17 @@ function CollectionsPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Payment date</Label>
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Payment date
+                </Label>
                 <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Payment method</Label>
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                Payment method
+              </Label>
               <div className="grid grid-cols-2 gap-2">
                 <MethodButton
                   active={method === "Cash"}
@@ -134,11 +146,19 @@ function CollectionsPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Reference (optional)</Label>
-              <Input value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Transfer ref, receipt no..." />
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                Reference (optional)
+              </Label>
+              <Input
+                value={reference}
+                onChange={(e) => setReference(e.target.value)}
+                placeholder="Transfer ref, receipt no..."
+              />
             </div>
 
-            <Button type="submit" size="lg" className="w-full">Save payment</Button>
+            <Button type="submit" size="lg" className="w-full">
+              Save payment
+            </Button>
           </form>
         </CardContent>
       </Card>
@@ -153,7 +173,10 @@ function CollectionsPage() {
               <div className="font-medium">{selected.name}</div>
               <div className="text-sm text-muted-foreground">{selected.phone}</div>
               <div className="text-sm">
-                Plan: <span className="font-medium">{formatNaira(selected.contributionAmount)} · {selected.frequency}</span>
+                Plan:{" "}
+                <span className="font-medium">
+                  {formatNaira(selected.contributionAmount)} · {selected.frequency}
+                </span>
               </div>
             </div>
           ) : (

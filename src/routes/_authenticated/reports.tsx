@@ -32,20 +32,33 @@ function ReportsPage() {
 
   const outstanding = db.customers
     .filter((c) => c.status === "Active" && c.frequency === "Daily")
-    .reduce((sum, c) => sum + Math.max(0, c.contributionAmount - (paidByCustomerToday.get(c.id) ?? 0)), 0);
+    .reduce(
+      (sum, c) => sum + Math.max(0, c.contributionAmount - (paidByCustomerToday.get(c.id) ?? 0)),
+      0,
+    );
 
   return (
     <div className="space-y-4 max-w-5xl">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <ReportCard label="Today's collections" value={formatNaira(collectionsToday)} tone="success" />
-        <ReportCard label="Today's withdrawals" value={formatNaira(withdrawalsToday)} tone="destructive" />
+        <ReportCard
+          label="Today's collections"
+          value={formatNaira(collectionsToday)}
+          tone="success"
+        />
+        <ReportCard
+          label="Today's withdrawals"
+          value={formatNaira(withdrawalsToday)}
+          tone="destructive"
+        />
         <ReportCard label="Cash balance" value={formatNaira(balance)} />
         <ReportCard label="Outstanding today" value={formatNaira(outstanding)} tone="accent" />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Card>
-          <CardHeader><CardTitle>This week</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>This week</CardTitle>
+          </CardHeader>
           <CardContent className="space-y-3">
             <Row label="Collections" value={formatNaira(collectionsWeek)} tone="success" />
             <Row label="Withdrawals" value={formatNaira(withdrawalsWeek)} tone="destructive" />
@@ -53,10 +66,16 @@ function ReportsPage() {
           </CardContent>
         </Card>
         <Card>
-          <CardHeader><CardTitle>All time</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>All time</CardTitle>
+          </CardHeader>
           <CardContent className="space-y-3">
             <Row label="Collections" value={formatNaira(totalIn(db.transactions))} tone="success" />
-            <Row label="Withdrawals" value={formatNaira(totalOut(db.transactions))} tone="destructive" />
+            <Row
+              label="Withdrawals"
+              value={formatNaira(totalOut(db.transactions))}
+              tone="destructive"
+            />
             <Row label="Balance" value={formatNaira(balance)} />
             <Row label="Customers" value={String(db.customers.length)} />
           </CardContent>
@@ -99,7 +118,15 @@ function ReportCard({
   );
 }
 
-function Row({ label, value, tone }: { label: string; value: string; tone?: "success" | "destructive" }) {
+function Row({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone?: "success" | "destructive";
+}) {
   const cls =
     tone === "success"
       ? "text-success"

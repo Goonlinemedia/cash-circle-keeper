@@ -21,8 +21,20 @@ function loadUsers(): AppUser[] {
   const raw = window.localStorage.getItem(USERS_KEY);
   if (!raw) {
     const seed: AppUser[] = [
-      { id: crypto.randomUUID(), name: "Admin", email: "admin@ajo.app", password: "admin123", role: "Admin" },
-      { id: crypto.randomUUID(), name: "Collector", email: "collector@ajo.app", password: "collect123", role: "Collector" },
+      {
+        id: crypto.randomUUID(),
+        name: "Admin",
+        email: "admin@ajo.app",
+        password: "admin123",
+        role: "Admin",
+      },
+      {
+        id: crypto.randomUUID(),
+        name: "Collector",
+        email: "collector@ajo.app",
+        password: "collect123",
+        role: "Collector",
+      },
     ];
     window.localStorage.setItem(USERS_KEY, JSON.stringify(seed));
     return seed;

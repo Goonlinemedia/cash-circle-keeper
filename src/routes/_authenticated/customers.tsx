@@ -119,10 +119,7 @@ function CustomersPage() {
               <Plus className="size-4" /> Add customer
             </Button>
           </DialogTrigger>
-          <CustomerFormDialog
-            initial={editing}
-            onClose={() => setOpen(false)}
-          />
+          <CustomerFormDialog initial={editing} onClose={() => setOpen(false)} />
         </Dialog>
       </div>
 
@@ -142,7 +139,10 @@ function CustomersPage() {
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-10">
+                  <TableCell
+                    colSpan={6}
+                    className="text-center text-sm text-muted-foreground py-10"
+                  >
                     No customers found.
                   </TableCell>
                 </TableRow>
@@ -162,10 +162,14 @@ function CustomersPage() {
                     </TableCell>
                     <TableCell className="tabular-nums">{c.phone}</TableCell>
                     <TableCell>
-                      <div className="font-medium tabular-nums">{formatNaira(c.contributionAmount)}</div>
+                      <div className="font-medium tabular-nums">
+                        {formatNaira(c.contributionAmount)}
+                      </div>
                       <div className="text-xs text-muted-foreground">{c.frequency}</div>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{formatDate(c.startDate)}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {formatDate(c.startDate)}
+                    </TableCell>
                     <TableCell>
                       <Badge
                         variant="outline"
@@ -212,7 +216,11 @@ function CustomersPage() {
                           <DropdownMenuItem
                             className="text-destructive focus:text-destructive"
                             onClick={() => {
-                              if (confirm(`Delete ${c.name}? This does not remove their transactions.`)) {
+                              if (
+                                confirm(
+                                  `Delete ${c.name}? This does not remove their transactions.`,
+                                )
+                              ) {
                                 deleteCustomer(c.id);
                                 toast.success("Customer deleted");
                               }
@@ -299,14 +307,25 @@ function CustomerFormDialog({
       <form onSubmit={onSubmit} className="space-y-4">
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="Full name">
-            <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+            <Input
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              required
+            />
           </Field>
           <Field label="Phone number">
-            <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} required />
+            <Input
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              required
+            />
           </Field>
         </div>
         <Field label="Address">
-          <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+          <Input
+            value={form.address}
+            onChange={(e) => setForm({ ...form, address: e.target.value })}
+          />
         </Field>
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="Contribution amount (₦)">
@@ -324,7 +343,9 @@ function CustomerFormDialog({
               value={form.frequency}
               onValueChange={(v) => setForm({ ...form, frequency: v as Frequency })}
             >
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="Daily">Daily</SelectItem>
                 <SelectItem value="Weekly">Weekly</SelectItem>
@@ -346,7 +367,9 @@ function CustomerFormDialog({
               value={form.status}
               onValueChange={(v) => setForm({ ...form, status: v as CustomerStatus })}
             >
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="Active">Active</SelectItem>
                 <SelectItem value="Inactive">Inactive</SelectItem>
@@ -355,7 +378,9 @@ function CustomerFormDialog({
           </Field>
         </div>
         <DialogFooter>
-          <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button type="button" variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
           <Button type="submit">{initial ? "Save changes" : "Add customer"}</Button>
         </DialogFooter>
       </form>

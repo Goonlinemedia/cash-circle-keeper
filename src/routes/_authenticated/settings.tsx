@@ -40,7 +40,10 @@ function SettingsPage() {
     }
     addUser({ name: name.trim(), email: email.trim(), password, role });
     toast.success("User added");
-    setName(""); setEmail(""); setPassword(""); setRole("Collector");
+    setName("");
+    setEmail("");
+    setPassword("");
+    setRole("Collector");
   };
 
   return (
@@ -51,11 +54,19 @@ function SettingsPage() {
           <CardDescription>Signed-in user details.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-1 text-sm">
-          <div><span className="text-muted-foreground">Name:</span> <span className="font-medium">{user?.name}</span></div>
-          <div><span className="text-muted-foreground">Email:</span> <span className="font-medium">{user?.email}</span></div>
+          <div>
+            <span className="text-muted-foreground">Name:</span>{" "}
+            <span className="font-medium">{user?.name}</span>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Email:</span>{" "}
+            <span className="font-medium">{user?.email}</span>
+          </div>
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground">Role:</span>
-            <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary">{user?.role}</Badge>
+            <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary">
+              {user?.role}
+            </Badge>
           </div>
         </CardContent>
       </Card>
@@ -80,9 +91,11 @@ function SettingsPage() {
                 </div>
                 <Badge
                   variant="outline"
-                  className={u.role === "Admin"
-                    ? "border-primary/30 bg-primary/10 text-primary"
-                    : "border-secondary/30 bg-secondary/10 text-secondary"}
+                  className={
+                    u.role === "Admin"
+                      ? "border-primary/30 bg-primary/10 text-primary"
+                      : "border-secondary/30 bg-secondary/10 text-secondary"
+                  }
                 >
                   {u.role}
                 </Badge>
@@ -108,21 +121,31 @@ function SettingsPage() {
           {isAdmin && (
             <form onSubmit={onAdd} className="grid sm:grid-cols-2 gap-3 pt-4 border-t">
               <div className="space-y-1.5">
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Name</Label>
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Name
+                </Label>
                 <Input value={name} onChange={(e) => setName(e.target.value)} />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Email</Label>
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Email
+                </Label>
                 <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Password</Label>
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Password
+                </Label>
                 <Input type="text" value={password} onChange={(e) => setPassword(e.target.value)} />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Role</Label>
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Role
+                </Label>
                 <Select value={role} onValueChange={(v) => setRole(v as Role)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Admin">Admin</SelectItem>
                     <SelectItem value="Collector">Collector</SelectItem>
@@ -141,7 +164,9 @@ function SettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-destructive">Danger zone</CardTitle>
-            <CardDescription>Erase all customers and transactions and reload demo data.</CardDescription>
+            <CardDescription>
+              Erase all customers and transactions and reload demo data.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <Button

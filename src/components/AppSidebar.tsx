@@ -47,7 +47,9 @@ export function AppSidebar() {
             <Coins className="size-5" />
           </div>
           <div className="min-w-0 group-data-[collapsible=icon]:hidden">
-            <div className="font-display font-bold text-base leading-tight truncate">Ajo Manager</div>
+            <div className="font-display font-bold text-base leading-tight truncate">
+              Ajo Manager
+            </div>
             <div className="text-[11px] text-sidebar-foreground/70 truncate">Thrift collection</div>
           </div>
         </div>

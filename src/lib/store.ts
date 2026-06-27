@@ -21,11 +21,7 @@ export interface Customer {
 export type TxnType = "IN" | "OUT";
 export type PaymentMethod = "Cash" | "Transfer";
 export type WithdrawalType =
-  | "Customer Withdrawal"
-  | "Office Expense"
-  | "Bank Deposit"
-  | "Refund"
-  | "Other";
+  "Customer Withdrawal" | "Office Expense" | "Bank Deposit" | "Refund" | "Other";
 
 export interface Transaction {
   id: string;

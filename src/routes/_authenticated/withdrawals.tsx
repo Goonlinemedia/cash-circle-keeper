@@ -1,11 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import {
-  useDB,
-  addTransaction,
-  cashBalance,
-  type WithdrawalType,
-} from "@/lib/store";
+import { useDB, addTransaction, cashBalance, type WithdrawalType } from "@/lib/store";
 import { formatNaira, todayISO } from "@/lib/format";
 import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,7 +47,10 @@ function WithdrawalsPage() {
     if (!Number.isFinite(amt) || amt <= 0) return toast.error("Enter a valid amount");
     if (type === "Customer Withdrawal" && !customerId) return toast.error("Pick a customer");
     if (amt > balance) {
-      if (!confirm(`This withdrawal exceeds the cash balance of ${formatNaira(balance)}. Continue?`)) return;
+      if (
+        !confirm(`This withdrawal exceeds the cash balance of ${formatNaira(balance)}. Continue?`)
+      )
+        return;
     }
     addTransaction({
       type: "OUT",
@@ -79,12 +77,18 @@ function WithdrawalsPage() {
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-5">
             <div className="space-y-1.5">
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Withdrawal type</Label>
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                Withdrawal type
+              </Label>
               <Select value={type} onValueChange={(v) => setType(v as WithdrawalType)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {WITHDRAWAL_TYPES.map((t) => (
-                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                    <SelectItem key={t} value={t}>
+                      {t}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -92,12 +96,18 @@ function WithdrawalsPage() {
 
             {type === "Customer Withdrawal" && (
               <div className="space-y-1.5">
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Customer</Label>
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Customer
+                </Label>
                 <Select value={customerId} onValueChange={setCustomerId}>
-                  <SelectTrigger><SelectValue placeholder="Pick customer" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pick customer" />
+                  </SelectTrigger>
                   <SelectContent>
                     {db.customers.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -106,7 +116,9 @@ function WithdrawalsPage() {
 
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Amount (₦)</Label>
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Amount (₦)
+                </Label>
                 <Input
                   type="number"
                   min={0}
@@ -118,13 +130,17 @@ function WithdrawalsPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Date</Label>
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Date
+                </Label>
                 <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Description</Label>
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                Description
+              </Label>
               <Textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -141,11 +157,17 @@ function WithdrawalsPage() {
       </Card>
 
       <Card className="h-fit lg:sticky lg:top-20">
-        <CardHeader><CardTitle className="text-base">Cash position</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-base">Cash position</CardTitle>
+        </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">Current balance</div>
-            <div className="font-display text-2xl font-bold mt-1 tabular-nums">{formatNaira(balance)}</div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">
+              Current balance
+            </div>
+            <div className="font-display text-2xl font-bold mt-1 tabular-nums">
+              {formatNaira(balance)}
+            </div>
           </div>
           {amount && Number(amount) > 0 && (
             <div className="rounded-md bg-destructive/10 text-destructive px-3 py-2 text-sm font-medium">
@@ -155,7 +177,10 @@ function WithdrawalsPage() {
           {amount && Number(amount) > balance && (
             <div className="rounded-md border border-destructive/30 bg-destructive/5 text-destructive px-3 py-2 text-xs flex gap-2">
               <AlertTriangle className="size-4 shrink-0 mt-0.5" />
-              <span>This exceeds your available cash. You can still save, but make sure that's intentional.</span>
+              <span>
+                This exceeds your available cash. You can still save, but make sure that's
+                intentional.
+              </span>
             </div>
           )}
         </CardContent>

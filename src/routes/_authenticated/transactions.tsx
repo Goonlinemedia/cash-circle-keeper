@@ -54,7 +54,9 @@ function TransactionsPage() {
       <Card>
         <CardContent className="pt-6 flex flex-wrap gap-3 items-center">
           <Select value={dateFilter} onValueChange={(v) => setDateFilter(v as DateFilter)}>
-            <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All dates</SelectItem>
               <SelectItem value="today">Today</SelectItem>
@@ -62,7 +64,9 @@ function TransactionsPage() {
             </SelectContent>
           </Select>
           <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as TypeFilter)}>
-            <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All types</SelectItem>
               <SelectItem value="IN">Money in</SelectItem>
@@ -70,18 +74,35 @@ function TransactionsPage() {
             </SelectContent>
           </Select>
           <Select value={customerFilter} onValueChange={setCustomerFilter}>
-            <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All customers</SelectItem>
               {db.customers.map((c) => (
-                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <div className="ml-auto flex gap-4 text-sm">
-            <div><span className="text-muted-foreground">In:</span> <span className="font-semibold text-success tabular-nums">{formatNaira(totalIn)}</span></div>
-            <div><span className="text-muted-foreground">Out:</span> <span className="font-semibold text-destructive tabular-nums">{formatNaira(totalOut)}</span></div>
-            <div><span className="text-muted-foreground">Net:</span> <span className="font-semibold tabular-nums">{formatNaira(totalIn - totalOut)}</span></div>
+            <div>
+              <span className="text-muted-foreground">In:</span>{" "}
+              <span className="font-semibold text-success tabular-nums">
+                {formatNaira(totalIn)}
+              </span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Out:</span>{" "}
+              <span className="font-semibold text-destructive tabular-nums">
+                {formatNaira(totalOut)}
+              </span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Net:</span>{" "}
+              <span className="font-semibold tabular-nums">{formatNaira(totalIn - totalOut)}</span>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -102,7 +123,10 @@ function TransactionsPage() {
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-10">
+                  <TableCell
+                    colSpan={6}
+                    className="text-center text-sm text-muted-foreground py-10"
+                  >
                     No transactions match these filters.
                   </TableCell>
                 </TableRow>
@@ -111,7 +135,9 @@ function TransactionsPage() {
                   const customer = customerById(db, t.customerId);
                   return (
                     <TableRow key={t.id}>
-                      <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{formatDate(t.date)}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                        {formatDate(t.date)}
+                      </TableCell>
                       <TableCell>
                         <Badge
                           variant="outline"
@@ -125,14 +151,18 @@ function TransactionsPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="font-medium">
-                        {t.type === "IN" ? (customer?.name ?? "—") : (t.withdrawalType ?? "Withdrawal")}
+                        {t.type === "IN"
+                          ? (customer?.name ?? "—")
+                          : (t.withdrawalType ?? "Withdrawal")}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {t.type === "IN"
                           ? `${t.paymentMethod ?? "Cash"}${t.reference ? ` · ${t.reference}` : ""}`
                           : (t.description ?? "—")}
                       </TableCell>
-                      <TableCell className={`text-right font-semibold tabular-nums ${t.type === "IN" ? "text-success" : "text-destructive"}`}>
+                      <TableCell
+                        className={`text-right font-semibold tabular-nums ${t.type === "IN" ? "text-success" : "text-destructive"}`}
+                      >
                         {t.type === "IN" ? "+" : "-"} {formatNaira(t.amount)}
                       </TableCell>
                       <TableCell className="w-10">

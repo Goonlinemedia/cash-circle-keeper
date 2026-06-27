@@ -46,24 +46,24 @@
   --radius: 0.625rem;
 
   /* Naira green & gold palette */
-  --background: oklch(0.972 0.018 95);            /* cream #F8F5EC */
-  --foreground: oklch(0.2 0.01 160);              /* near-black */
+  --background: oklch(0.972 0.018 95); /* cream #F8F5EC */
+  --foreground: oklch(0.2 0.01 160); /* near-black */
 
   --card: oklch(0.995 0.006 95);
   --card-foreground: oklch(0.2 0.01 160);
   --popover: oklch(0.995 0.006 95);
   --popover-foreground: oklch(0.2 0.01 160);
 
-  --primary: oklch(0.32 0.07 160);                /* deep green #0B3B2E */
+  --primary: oklch(0.32 0.07 160); /* deep green #0B3B2E */
   --primary-foreground: oklch(0.97 0.018 95);
 
-  --secondary: oklch(0.55 0.13 162);              /* mid green #16805C */
+  --secondary: oklch(0.55 0.13 162); /* mid green #16805C */
   --secondary-foreground: oklch(0.99 0.005 95);
 
   --muted: oklch(0.93 0.014 95);
   --muted-foreground: oklch(0.45 0.02 160);
 
-  --accent: oklch(0.81 0.14 85);                  /* gold #E9B949 */
+  --accent: oklch(0.81 0.14 85); /* gold #E9B949 */
   --accent-foreground: oklch(0.22 0.04 80);
 
   --success: oklch(0.62 0.15 155);
@@ -128,14 +128,20 @@
     font-family: var(--font-sans);
     font-feature-settings: "ss01", "cv11";
   }
-  h1, h2, h3, h4 {
+  h1,
+  h2,
+  h3,
+  h4 {
     font-family: var(--font-display);
     letter-spacing: -0.02em;
   }
 }
 
 @utility naira-grid-bg {
-  background-image:
-    radial-gradient(circle at 1px 1px, color-mix(in oklab, var(--primary) 10%, transparent) 1px, transparent 0);
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    color-mix(in oklab, var(--primary) 10%, transparent) 1px,
+    transparent 0
+  );
   background-size: 24px 24px;
 }

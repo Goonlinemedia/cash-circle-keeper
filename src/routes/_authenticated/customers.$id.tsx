@@ -44,7 +44,10 @@ function CustomerLedger() {
 
   return (
     <div className="space-y-4 max-w-4xl">
-      <Link to="/customers" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+      <Link
+        to="/customers"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+      >
         <ArrowLeft className="size-4" /> Back to customers
       </Link>
 
@@ -58,9 +61,20 @@ function CustomerLedger() {
               <div>
                 <div className="font-display text-2xl font-bold">{customer.name}</div>
                 <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mt-1">
-                  <span className="inline-flex items-center gap-1"><Phone className="size-3.5" />{customer.phone}</span>
-                  {customer.address && <span className="inline-flex items-center gap-1"><MapPin className="size-3.5" />{customer.address}</span>}
-                  <span className="inline-flex items-center gap-1"><Calendar className="size-3.5" />Started {formatDate(customer.startDate)}</span>
+                  <span className="inline-flex items-center gap-1">
+                    <Phone className="size-3.5" />
+                    {customer.phone}
+                  </span>
+                  {customer.address && (
+                    <span className="inline-flex items-center gap-1">
+                      <MapPin className="size-3.5" />
+                      {customer.address}
+                    </span>
+                  )}
+                  <span className="inline-flex items-center gap-1">
+                    <Calendar className="size-3.5" />
+                    Started {formatDate(customer.startDate)}
+                  </span>
                 </div>
               </div>
             </div>
@@ -77,8 +91,16 @@ function CustomerLedger() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3 mt-6">
-            <Stat label="Contribution" value={formatNaira(customer.contributionAmount)} sub={customer.frequency} />
-            <Stat label="Total paid" value={formatNaira(runningTotal)} sub={`${payments.length} payments`} />
+            <Stat
+              label="Contribution"
+              value={formatNaira(customer.contributionAmount)}
+              sub={customer.frequency}
+            />
+            <Stat
+              label="Total paid"
+              value={formatNaira(runningTotal)}
+              sub={`${payments.length} payments`}
+            />
             <Stat
               label="Last payment"
               value={payments.length ? formatDate(payments[payments.length - 1].date) : "—"}
@@ -93,7 +115,9 @@ function CustomerLedger() {
         </CardHeader>
         <CardContent>
           {payments.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-6 text-center">No payments recorded yet.</p>
+            <p className="text-sm text-muted-foreground py-6 text-center">
+              No payments recorded yet.
+            </p>
           ) : (
             <ul className="divide-y">
               {payments.map((t, i) => {
@@ -103,10 +127,13 @@ function CustomerLedger() {
                     <div>
                       <div className="font-medium">{formatDate(t.date)}</div>
                       <div className="text-xs text-muted-foreground">
-                        {t.paymentMethod ?? "Cash"}{t.reference ? ` · ${t.reference}` : ""}
+                        {t.paymentMethod ?? "Cash"}
+                        {t.reference ? ` · ${t.reference}` : ""}
                       </div>
                     </div>
-                    <div className="text-success font-semibold tabular-nums">+ {formatNaira(t.amount)}</div>
+                    <div className="text-success font-semibold tabular-nums">
+                      + {formatNaira(t.amount)}
+                    </div>
                     <div className="text-sm text-muted-foreground tabular-nums w-32 text-right">
                       Running: {formatNaira(running)}
                     </div>
