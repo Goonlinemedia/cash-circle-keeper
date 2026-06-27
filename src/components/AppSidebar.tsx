@@ -2,6 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard,
   Users,
+  FolderKanban,
   ArrowDownToLine,
   ArrowUpFromLine,
   Receipt,
@@ -28,6 +29,7 @@ import { Button } from "@/components/ui/button";
 const items = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Customers", url: "/customers", icon: Users },
+  { title: "Ajo Packages", url: "/packages", icon: FolderKanban },
   { title: "Collections", url: "/collections", icon: ArrowDownToLine },
   { title: "Withdrawals", url: "/withdrawals", icon: ArrowUpFromLine },
   { title: "Transactions", url: "/transactions", icon: Receipt },

@@ -4,6 +4,18 @@ import { supabase } from "./supabase";
 export type Frequency = "Daily" | "Weekly" | "Monthly";
 export type CustomerStatus = "Active" | "Inactive";
 
+export interface AjoPackage {
+  id: string;
+  name: string;
+  contributionAmount: number;
+  targetAmount?: number;
+  frequency: Frequency;
+  durationDays?: number;
+  description?: string;
+  status: "Active" | "Completed" | "Inactive";
+  createdAt: string;
+}
+
 export interface Customer {
   id: string;
   name: string;
@@ -14,6 +26,7 @@ export interface Customer {
   startDate: string; // ISO date
   status: CustomerStatus;
   createdAt: string;
+  ajoPackageId?: string;
 }
 
 export type TxnType = "IN" | "OUT";
@@ -38,13 +51,14 @@ export interface Transaction {
 interface DB {
   customers: Customer[];
   transactions: Transaction[];
+  ajoPackages: AjoPackage[];
 }
 
 let fetched = false;
-let cachedDB: DB = { customers: [], transactions: [] };
+let cachedDB: DB = { customers: [], transactions: [], ajoPackages: [] };
 
 function load(): DB {
-  if (typeof window === "undefined") return { customers: [], transactions: [] };
+  if (typeof window === "undefined") return { customers: [], transactions: [], ajoPackages: [] };
   if (!fetched) {
     fetched = true;
     fetchFromSupabase();
@@ -64,6 +78,11 @@ export async function fetchFromSupabase() {
       .select("*, profiles(name)")
       .order("date", { ascending: false });
 
+    const { data: pkgs } = await supabase
+      .from("ajo_packages")
+      .select("*")
+      .order("created_at", { ascending: false });
+
     cachedDB = {
       customers: (custs || []).map((c: any) => ({
         id: c.id,
@@ -75,6 +94,7 @@ export async function fetchFromSupabase() {
         startDate: c.start_date,
         status: c.status as CustomerStatus,
         createdAt: c.created_at,
+        ajoPackageId: c.ajo_package_id || undefined,
       })),
       transactions: (txns || []).map((t: any) => ({
         id: t.id,
@@ -88,6 +108,17 @@ export async function fetchFromSupabase() {
         date: t.date,
         createdBy: t.profiles?.name || "unknown",
         createdAt: t.created_at,
+      })),
+      ajoPackages: (pkgs || []).map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        contributionAmount: Number(p.contribution_amount),
+        targetAmount: p.target_amount ? Number(p.target_amount) : undefined,
+        frequency: p.frequency as Frequency,
+        durationDays: p.duration_days || undefined,
+        description: p.description || undefined,
+        status: p.status as "Active" | "Completed" | "Inactive",
+        createdAt: p.created_at,
       })),
     };
 
@@ -105,7 +136,7 @@ function subscribe(l: () => void) {
 }
 
 export function useDB(): DB {
-  return useSyncExternalStore(subscribe, load, () => ({ customers: [], transactions: [] }));
+  return useSyncExternalStore(subscribe, load, () => ({ customers: [], transactions: [], ajoPackages: [] }));
 }
 
 // ---- Mutations ----
@@ -139,6 +170,7 @@ export async function addCustomer(input: Omit<Customer, "id" | "createdAt">): Pr
         start_date: input.startDate,
         status: input.status,
         created_at: tempCreatedAt,
+        ajo_package_id: input.ajoPackageId || null,
       },
     ])
     .then(({ error }) => {
@@ -175,6 +207,7 @@ export async function updateCustomer(id: string, patch: Partial<Customer>): Prom
   if (patch.frequency !== undefined) dbPatch.frequency = patch.frequency;
   if (patch.startDate !== undefined) dbPatch.start_date = patch.startDate;
   if (patch.status !== undefined) dbPatch.status = patch.status;
+  if (patch.ajoPackageId !== undefined) dbPatch.ajo_package_id = patch.ajoPackageId || null;
 
   supabase
     .from("customers")
@@ -312,6 +345,115 @@ export async function deleteTransaction(id: string): Promise<void> {
     });
 }
 
+export async function addAjoPackage(
+  input: Omit<AjoPackage, "id" | "createdAt">,
+): Promise<AjoPackage> {
+  const tempId = crypto.randomUUID();
+  const tempCreatedAt = new Date().toISOString();
+  const newPackage: AjoPackage = {
+    ...input,
+    id: tempId,
+    createdAt: tempCreatedAt,
+  };
+
+  // Optimistic update
+  cachedDB = {
+    ...cachedDB,
+    ajoPackages: [newPackage, ...cachedDB.ajoPackages],
+  };
+  listeners.forEach((l) => l());
+
+  supabase
+    .from("ajo_packages")
+    .insert([
+      {
+        id: tempId,
+        name: input.name,
+        contribution_amount: input.contributionAmount,
+        target_amount: input.targetAmount || null,
+        frequency: input.frequency,
+        duration_days: input.durationDays || null,
+        description: input.description || null,
+        status: input.status,
+        created_at: tempCreatedAt,
+      },
+    ])
+    .then(({ error }) => {
+      if (error) {
+        console.error("Error adding Ajo Package to Supabase:", error);
+        cachedDB = {
+          ...cachedDB,
+          ajoPackages: cachedDB.ajoPackages.filter((p) => p.id !== tempId),
+        };
+        listeners.forEach((l) => l());
+      }
+    });
+
+  return newPackage;
+}
+
+export async function updateAjoPackage(id: string, patch: Partial<AjoPackage>): Promise<void> {
+  const oldPackages = [...cachedDB.ajoPackages];
+
+  // Optimistic update
+  cachedDB = {
+    ...cachedDB,
+    ajoPackages: cachedDB.ajoPackages.map((p) => (p.id === id ? { ...p, ...patch } : p)),
+  };
+  listeners.forEach((l) => l());
+
+  const dbPatch: any = {};
+  if (patch.name !== undefined) dbPatch.name = patch.name;
+  if (patch.contributionAmount !== undefined)
+    dbPatch.contribution_amount = patch.contributionAmount;
+  if (patch.targetAmount !== undefined) dbPatch.target_amount = patch.targetAmount || null;
+  if (patch.frequency !== undefined) dbPatch.frequency = patch.frequency;
+  if (patch.durationDays !== undefined) dbPatch.duration_days = patch.durationDays || null;
+  if (patch.description !== undefined) dbPatch.description = patch.description || null;
+  if (patch.status !== undefined) dbPatch.status = patch.status;
+
+  supabase
+    .from("ajo_packages")
+    .update(dbPatch)
+    .eq("id", id)
+    .then(({ error }) => {
+      if (error) {
+        console.error("Error updating Ajo Package in Supabase:", error);
+        cachedDB = {
+          ...cachedDB,
+          ajoPackages: oldPackages,
+        };
+        listeners.forEach((l) => l());
+      }
+    });
+}
+
+export async function deleteAjoPackage(id: string): Promise<void> {
+  const oldPackages = [...cachedDB.ajoPackages];
+
+  // Optimistic update
+  cachedDB = {
+    ...cachedDB,
+    ajoPackages: cachedDB.ajoPackages.filter((p) => p.id !== id),
+  };
+  listeners.forEach((l) => l());
+
+  supabase
+    .from("ajo_packages")
+    .delete()
+    .eq("id", id)
+    .then(({ error }) => {
+      if (error) {
+        console.error("Error deleting Ajo Package from Supabase:", error);
+        cachedDB = {
+          ...cachedDB,
+          ajoPackages: oldPackages,
+        };
+        listeners.forEach((l) => l());
+      }
+    });
+}
+
 // ---- Selectors ----
 export function cashBalance(txns: Transaction[]): number {
   return txns.reduce((s, t) => s + (t.type === "IN" ? t.amount : -t.amount), 0);
@@ -331,12 +473,13 @@ export function customerById(db: DB, id?: string): Customer | undefined {
 }
 
 export async function resetDB() {
-  cachedDB = { customers: [], transactions: [] };
+  cachedDB = { customers: [], transactions: [], ajoPackages: [] };
   listeners.forEach((l) => l());
 
   try {
     await supabase.from("transactions").delete().neq("id", "00000000-0000-0000-0000-000000000000");
     await supabase.from("customers").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    await supabase.from("ajo_packages").delete().neq("id", "00000000-0000-0000-0000-000000000000");
   } catch (e) {
     console.error("Error resetting database:", e);
   }

@@ -63,6 +63,7 @@ interface FormState {
   frequency: Frequency;
   startDate: string;
   status: CustomerStatus;
+  ajoPackageId: string;
 }
 
 const emptyForm = (): FormState => ({
@@ -73,6 +74,7 @@ const emptyForm = (): FormState => ({
   frequency: "Daily",
   startDate: new Date().toISOString().slice(0, 10),
   status: "Active",
+  ajoPackageId: "",
 });
 
 function CustomersPage() {
@@ -162,10 +164,12 @@ function CustomersPage() {
                     </TableCell>
                     <TableCell className="tabular-nums">{c.phone}</TableCell>
                     <TableCell>
-                      <div className="font-medium tabular-nums">
-                        {formatNaira(c.contributionAmount)}
+                      <div className="font-semibold text-foreground truncate max-w-[150px]">
+                        {c.ajoPackageId ? (db.ajoPackages?.find(p => p.id === c.ajoPackageId)?.name || "Plan") : "Custom Plan"}
                       </div>
-                      <div className="text-xs text-muted-foreground">{c.frequency}</div>
+                      <div className="text-xs text-muted-foreground tabular-nums">
+                        {formatNaira(c.contributionAmount)} · {c.frequency}
+                      </div>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {formatDate(c.startDate)}
@@ -249,6 +253,7 @@ function CustomerFormDialog({
   initial: Customer | null;
   onClose: () => void;
 }) {
+  const db = useDB();
   const [form, setForm] = useState<FormState>(() =>
     initial
       ? {
@@ -259,6 +264,7 @@ function CustomerFormDialog({
           frequency: initial.frequency,
           startDate: initial.startDate,
           status: initial.status,
+          ajoPackageId: initial.ajoPackageId || "",
         }
       : emptyForm(),
   );
@@ -270,30 +276,43 @@ function CustomerFormDialog({
     if (!form.phone.trim()) return toast.error("Phone is required");
     if (!Number.isFinite(amount) || amount <= 0) return toast.error("Enter a valid amount");
 
+    const customerData = {
+      name: form.name.trim(),
+      phone: form.phone.trim(),
+      address: form.address.trim(),
+      contributionAmount: amount,
+      frequency: form.frequency,
+      startDate: form.startDate,
+      status: form.status,
+      ajoPackageId: form.ajoPackageId || undefined,
+    };
+
     if (initial) {
-      updateCustomer(initial.id, {
-        name: form.name.trim(),
-        phone: form.phone.trim(),
-        address: form.address.trim(),
-        contributionAmount: amount,
-        frequency: form.frequency,
-        startDate: form.startDate,
-        status: form.status,
-      });
+      updateCustomer(initial.id, customerData);
       toast.success("Customer updated");
     } else {
-      addCustomer({
-        name: form.name.trim(),
-        phone: form.phone.trim(),
-        address: form.address.trim(),
-        contributionAmount: amount,
-        frequency: form.frequency,
-        startDate: form.startDate,
-        status: form.status,
-      });
+      addCustomer(customerData);
       toast.success("Customer added");
     }
     onClose();
+  };
+
+  const onPackageChange = (val: string) => {
+    const pkgId = val === "none" ? "" : val;
+    const pkg = db.ajoPackages?.find((p) => p.id === pkgId);
+    if (pkg) {
+      setForm((prev) => ({
+        ...prev,
+        ajoPackageId: pkgId,
+        contributionAmount: String(pkg.contributionAmount),
+        frequency: pkg.frequency,
+      }));
+    } else {
+      setForm((prev) => ({
+        ...prev,
+        ajoPackageId: "",
+      }));
+    }
   };
 
   return (
@@ -327,6 +346,26 @@ function CustomerFormDialog({
             onChange={(e) => setForm({ ...form, address: e.target.value })}
           />
         </Field>
+
+        <Field label="Subscribe to Ajo Package">
+          <Select
+            value={form.ajoPackageId || "none"}
+            onValueChange={onPackageChange}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="No package / Custom Plan" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">No package / Custom Plan</SelectItem>
+              {(db.ajoPackages || []).map((pkg) => (
+                <SelectItem key={pkg.id} value={pkg.id}>
+                  {pkg.name} ({formatNaira(pkg.contributionAmount)} · {pkg.frequency})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="Contribution amount (₦)">
             <Input

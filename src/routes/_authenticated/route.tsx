@@ -28,6 +28,7 @@ function AuthLayout() {
   const titleMap: Record<string, string> = {
     "/dashboard": "Dashboard",
     "/customers": "Customers",
+    "/packages": "Ajo Packages",
     "/collections": "Record Collection",
     "/withdrawals": "Record Withdrawal",
     "/transactions": "Transactions",
