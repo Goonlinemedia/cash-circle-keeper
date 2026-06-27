@@ -1,4 +1,4 @@
-import { createFileRoute, Navigate, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Navigate, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -17,8 +17,8 @@ function Login() {
   const navigate = useNavigate();
   
   // Staff login states
-  const [email, setEmail] = useState("admin@ajo.app");
-  const [password, setPassword] = useState("admin123");
+  const [email, setEmail] = useState("collector@ajo.app");
+  const [password, setPassword] = useState("collect123");
   
   // Customer login states
   const [firstName, setFirstName] = useState("");
@@ -81,8 +81,8 @@ function Login() {
           <TabsContent value="staff">
             <Card className="border-border/60 shadow-lg">
               <CardHeader>
-                <CardTitle>Staff Sign in</CardTitle>
-                <CardDescription>Use your collector or admin credentials.</CardDescription>
+                <CardTitle>Collector Sign in</CardTitle>
+                <CardDescription>Use your staff collector credentials.</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={onStaffSubmit} className="space-y-4">
@@ -111,10 +111,17 @@ function Login() {
                     {loading ? "Signing in..." : "Sign in"}
                   </Button>
                 </form>
+                
                 <div className="mt-6 rounded-md bg-muted/60 p-3 text-xs text-muted-foreground space-y-1">
-                  <div className="font-medium text-foreground">Demo accounts</div>
-                  <div>Admin — admin@ajo.app / admin123</div>
+                  <div className="font-medium text-foreground">Demo Collector account</div>
                   <div>Collector — collector@ajo.app / collect123</div>
+                </div>
+
+                <div className="mt-4 pt-4 border-t text-center text-xs text-muted-foreground">
+                  Are you an Administrator?{" "}
+                  <Link to="/admin" className="text-primary hover:underline font-semibold">
+                    Sign in here
+                  </Link>
                 </div>
               </CardContent>
             </Card>
