@@ -43,21 +43,29 @@ interface DB {
 }
 
 const KEY = "ajo-mvp-db-v1";
+let cachedDB: DB | null = null;
 
 function load(): DB {
   if (typeof window === "undefined") return { customers: [], transactions: [] };
+  if (cachedDB) return cachedDB;
   try {
     const raw = window.localStorage.getItem(KEY);
-    if (!raw) return seed();
-    return JSON.parse(raw) as DB;
+    if (!raw) {
+      cachedDB = seed();
+      return cachedDB;
+    }
+    cachedDB = JSON.parse(raw) as DB;
+    return cachedDB!;
   } catch {
-    return { customers: [], transactions: [] };
+    cachedDB = { customers: [], transactions: [] };
+    return cachedDB;
   }
 }
 
 function save(db: DB) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(KEY, JSON.stringify(db));
+  cachedDB = { ...db };
   listeners.forEach((l) => l());
 }
 
@@ -137,6 +145,7 @@ function seed(): DB {
   if (typeof window !== "undefined") {
     window.localStorage.setItem(KEY, JSON.stringify(db));
   }
+  cachedDB = db;
   return db;
 }
 
@@ -215,6 +224,7 @@ export function customerById(db: DB, id?: string): Customer | undefined {
 export function resetDB() {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(KEY);
+  cachedDB = null;
   seed();
   listeners.forEach((l) => l());
 }
