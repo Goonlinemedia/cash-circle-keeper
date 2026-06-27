@@ -210,7 +210,7 @@ function CustomersPage() {
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
-                            variant="destructive"
+                            className="text-destructive focus:text-destructive"
                             onClick={() => {
                               if (confirm(`Delete ${c.name}? This does not remove their transactions.`)) {
                                 deleteCustomer(c.id);
