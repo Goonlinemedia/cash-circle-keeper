@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo } from "react";
 import { useDB, cashBalance, totalIn, totalOut, customerById } from "@/lib/store";
 import { formatNaira, isSameDay, todayISO } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,14 +11,23 @@ import {
   Users,
   TrendingUp,
   ArrowRight,
+  Phone,
+  MapPin,
+  Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
 });
 
 function Dashboard() {
+  const { user } = useAuth();
+  if (user?.role === "Customer") {
+    return <CustomerDashboard />;
+  }
+
   const db = useDB();
   const today = todayISO();
   const txnsToday = db.transactions.filter((t) => isSameDay(t.date, today));
@@ -246,5 +256,241 @@ function KpiCard({
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function CustomerDashboard() {
+  const { user } = useAuth();
+  const db = useDB();
+
+  // Find customer profile details
+  const customer = db.customers.find((c) => c.id === user?.id);
+
+  // Filter transactions for this customer
+  const transactions = useMemo(() => {
+    return db.transactions
+      .filter((t) => t.customerId === user?.id)
+      .sort((a, b) => b.date.localeCompare(a.date));
+  }, [db.transactions, user?.id]);
+
+  if (!customer) {
+    return (
+      <div className="max-w-xl mx-auto py-10">
+        <Card>
+          <CardContent className="py-10 text-center space-y-3">
+            <p className="text-muted-foreground">Unable to load customer profile details.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Calculate metrics
+  const contributions = transactions.filter((t) => t.type === "IN");
+  const withdrawals = transactions.filter((t) => t.type === "OUT");
+
+  const totalContributed = contributions.reduce((s, t) => s + t.amount, 0);
+  const totalWithdrawn = withdrawals.reduce((s, t) => s + t.amount, 0);
+  const currentBalance = totalContributed - totalWithdrawn;
+
+  return (
+    <div className="space-y-6 max-w-7xl">
+      {/* Welcome Card */}
+      <div className="rounded-2xl bg-gradient-to-r from-primary to-primary/80 text-primary-foreground p-6 md:p-8 relative overflow-hidden shadow-lg border border-primary/20">
+        <div className="absolute -right-12 -top-12 size-56 rounded-full bg-accent/20 blur-3xl" />
+        <div className="relative space-y-2">
+          <Badge className="bg-white/20 text-white hover:bg-white/30 border-none px-3 py-1 font-medium">
+            Customer Portal
+          </Badge>
+          <h2 className="font-display text-2xl md:text-3xl font-bold">
+            Welcome back, {customer.name}!
+          </h2>
+          <p className="text-sm text-primary-foreground/80 max-w-md">
+            Track your thrift savings, contributions, and withdrawals in real-time.
+          </p>
+        </div>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Card className="relative overflow-hidden border-border/40 shadow-sm bg-gradient-to-br from-card to-success/5">
+          <CardContent className="pt-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Current Balance
+                </p>
+                <h3 className="mt-2 font-display text-3xl font-bold text-success tabular-nums">
+                  {formatNaira(currentBalance)}
+                </h3>
+                <p className="text-xs text-muted-foreground mt-1">Available thrift savings</p>
+              </div>
+              <div className="size-10 rounded-xl bg-success/15 text-success grid place-items-center">
+                <Wallet className="size-5" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="relative overflow-hidden border-border/40 shadow-sm">
+          <CardContent className="pt-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Total Saved
+                </p>
+                <h3 className="mt-2 font-display text-2xl font-bold text-foreground tabular-nums">
+                  {formatNaira(totalContributed)}
+                </h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {contributions.length} collections recorded
+                </p>
+              </div>
+              <div className="size-10 rounded-xl bg-primary/10 text-primary grid place-items-center">
+                <ArrowDownToLine className="size-5" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="relative overflow-hidden border-border/40 shadow-sm">
+          <CardContent className="pt-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Total Withdrawn
+                </p>
+                <h3 className="mt-2 font-display text-2xl font-bold text-foreground tabular-nums">
+                  {formatNaira(totalWithdrawn)}
+                </h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {withdrawals.length} withdrawals recorded
+                </p>
+              </div>
+              <div className="size-10 rounded-xl bg-destructive/10 text-destructive grid place-items-center">
+                <ArrowUpFromLine className="size-5" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-3">
+        {/* Profile Card */}
+        <Card className="md:col-span-1 border-border/60 bg-card/50 backdrop-blur">
+          <CardHeader>
+            <CardTitle className="text-lg font-bold">Your Account Plan</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-xl border bg-muted/40 p-4 space-y-3">
+              <div className="flex justify-between items-center text-sm pb-2 border-b">
+                <span className="text-muted-foreground">Target Contribution</span>
+                <span className="font-bold text-foreground">
+                  {formatNaira(customer.contributionAmount)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-sm pb-2 border-b">
+                <span className="text-muted-foreground">Saving Frequency</span>
+                <Badge variant="secondary" className="font-medium text-xs">
+                  {customer.frequency}
+                </Badge>
+              </div>
+              <div className="flex justify-between items-center text-sm pb-2 border-b">
+                <span className="text-muted-foreground">Status</span>
+                <Badge
+                  variant="outline"
+                  className={
+                    customer.status === "Active"
+                      ? "border-success/40 bg-success/15 text-success font-medium animate-pulse"
+                      : "border-muted-foreground/30 bg-muted text-muted-foreground"
+                  }
+                >
+                  {customer.status}
+                </Badge>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">Join Date</span>
+                <span className="font-medium text-foreground">
+                  {new Date(customer.startDate).toLocaleDateString("en-NG", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-2.5 text-xs text-muted-foreground px-1">
+              <div className="flex items-center gap-2">
+                <Phone className="size-4 shrink-0" />
+                <span>{customer.phone}</span>
+              </div>
+              {customer.address && (
+                <div className="flex items-start gap-2">
+                  <MapPin className="size-4 shrink-0 mt-0.5" />
+                  <span>{customer.address}</span>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Ledger Card */}
+        <Card className="md:col-span-2 border-border/60 bg-card/50 backdrop-blur">
+          <CardHeader>
+            <CardTitle className="text-lg font-bold">Your Transaction Ledger</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {transactions.length === 0 ? (
+              <div className="text-sm text-muted-foreground py-10 text-center">
+                No transactions recorded yet.
+              </div>
+            ) : (
+              <ul className="divide-y max-h-[400px] overflow-y-auto pr-2">
+                {transactions.map((t) => {
+                  const isContribution = t.type === "IN";
+                  return (
+                    <li key={t.id} className="flex items-center justify-between py-3">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`size-9 rounded-full grid place-items-center shrink-0 ${isContribution ? "bg-success/15 text-success" : "bg-destructive/15 text-destructive"}`}
+                        >
+                          {isContribution ? (
+                            <ArrowDownToLine className="size-4" />
+                          ) : (
+                            <ArrowUpFromLine className="size-4" />
+                          )}
+                        </div>
+                        <div>
+                          <div className="font-medium text-sm">
+                            {isContribution ? "Savings Contribution" : "Thrift Withdrawal"}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {new Date(t.date).toLocaleDateString("en-NG", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit"
+                            })}
+                            {t.paymentMethod && ` · ${t.paymentMethod}`}
+                            {t.reference && ` · Ref: ${t.reference}`}
+                          </div>
+                        </div>
+                      </div>
+                      <div
+                        className={`font-semibold tabular-nums text-sm ${isContribution ? "text-success" : "text-destructive"}`}
+                      >
+                        {isContribution ? "+" : "-"} {formatNaira(t.amount)}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 }

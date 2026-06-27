@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { supabase } from "./supabase";
+import { fetchFromSupabase } from "./store";
 
-export type Role = "Admin" | "Collector";
+export type Role = "Admin" | "Collector" | "Customer";
 
 export interface AppUser {
   id: string;
@@ -9,12 +10,14 @@ export interface AppUser {
   email: string;
   password?: string;
   role: Role;
+  phone?: string;
 }
 
 interface AuthCtx {
   user: AppUser | null;
   ready: boolean;
   login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
+  loginAsCustomer: (firstName: string, phone: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => Promise<void>;
   users: AppUser[];
   addUser: (u: Omit<AppUser, "id">) => Promise<{ ok: boolean; error?: string }>;
@@ -84,20 +87,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // 1. Check current session
+    // 1. Check local storage for customer session first
+    const localCust = localStorage.getItem("customer_session");
+    if (localCust) {
+      try {
+        const parsed = JSON.parse(localCust);
+        setUser(parsed);
+        setReady(true);
+        fetchFromSupabase();
+        return;
+      } catch (e) {
+        localStorage.removeItem("customer_session");
+      }
+    }
+
+    // 2. Check current session
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
         const profile = await fetchProfile(session.user.id, session.user.email!);
         setUser(profile);
         await fetchUsersList();
+        fetchFromSupabase();
       }
       setReady(true);
     });
 
-    // 2. Listen to session updates
+    // 3. Listen to session updates
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (localStorage.getItem("customer_session")) {
+        return;
+      }
       if (session?.user) {
         const profile = await fetchProfile(session.user.id, session.user.email!);
         setUser(profile);
@@ -106,6 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
         setUsers([]);
       }
+      fetchFromSupabase();
       setReady(true);
     });
 
@@ -125,6 +147,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { ok: false, error: error.message };
       }
 
+      await fetchFromSupabase();
+      return { ok: true };
+    } catch (e: any) {
+      return { ok: false, error: e.message || "An error occurred" };
+    }
+  };
+
+  const loginAsCustomer = async (firstName: string, phone: string) => {
+    try {
+      const cleanPhone = phone.trim();
+      const cleanName = firstName.trim().toLowerCase();
+
+      if (!cleanName || !cleanPhone) {
+        return { ok: false, error: "First name and phone number are required" };
+      }
+
+      // Query customers table
+      const { data, error } = await supabase
+        .from("customers")
+        .select("*")
+        .eq("phone", cleanPhone);
+
+      if (error) {
+        return { ok: false, error: error.message };
+      }
+
+      if (!data || data.length === 0) {
+        return { ok: false, error: "No customer found with this phone number" };
+      }
+
+      // Find the customer whose name contains the firstName as a full word or prefix
+      const matchedCustomer = data.find(c => {
+        const nameParts = c.name.toLowerCase().split(/\s+/);
+        return nameParts.includes(cleanName) || c.name.toLowerCase().startsWith(cleanName);
+      });
+
+      if (!matchedCustomer) {
+        return { ok: false, error: "First name does not match the customer name on file" };
+      }
+
+      const customerUser: AppUser = {
+        id: matchedCustomer.id,
+        name: matchedCustomer.name,
+        email: matchedCustomer.phone,
+        role: "Customer",
+        phone: matchedCustomer.phone
+      };
+
+      setUser(customerUser);
+      localStorage.setItem("customer_session", JSON.stringify(customerUser));
+      await fetchFromSupabase();
       return { ok: true };
     } catch (e: any) {
       return { ok: false, error: e.message || "An error occurred" };
@@ -132,8 +205,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
+    localStorage.removeItem("customer_session");
     await supabase.auth.signOut();
     setUser(null);
+    await fetchFromSupabase();
   };
 
   const addUser = async (u: Omit<AppUser, "id">) => {
@@ -179,7 +254,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <Ctx.Provider value={{ user, ready, login, logout, users, addUser, removeUser }}>
+    <Ctx.Provider value={{ user, ready, login, loginAsCustomer, logout, users, addUser, removeUser }}>
       {children}
     </Ctx.Provider>
   );

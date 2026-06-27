@@ -52,7 +52,7 @@ function load(): DB {
   return cachedDB;
 }
 
-async function fetchFromSupabase() {
+export async function fetchFromSupabase() {
   try {
     const { data: custs } = await supabase
       .from("customers")

@@ -14,8 +14,14 @@ function AuthLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
-    if (ready && !user) navigate({ to: "/login", replace: true });
-  }, [ready, user, navigate]);
+    if (ready) {
+      if (!user) {
+        navigate({ to: "/login", replace: true });
+      } else if (user.role === "Customer" && pathname !== "/dashboard") {
+        navigate({ to: "/dashboard", replace: true });
+      }
+    }
+  }, [ready, user, navigate, pathname]);
 
   if (!ready || !user) return null;
 

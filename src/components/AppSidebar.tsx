@@ -39,6 +39,13 @@ export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { user, logout } = useAuth();
 
+  const visibleItems = items.filter((item) => {
+    if (user?.role === "Customer") {
+      return item.title === "Dashboard";
+    }
+    return true;
+  });
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
@@ -59,7 +66,7 @@ export function AppSidebar() {
           <SidebarGroupLabel>Main</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => {
+              {visibleItems.map((item) => {
                 const active = pathname === item.url || pathname.startsWith(item.url + "/");
                 return (
                   <SidebarMenuItem key={item.url}>
