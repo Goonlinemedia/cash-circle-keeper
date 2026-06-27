@@ -187,6 +187,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { ok: false, error: "First name does not match the customer name on file" };
       }
 
+      if (matchedCustomer.is_approved === false) {
+        return { ok: false, error: "Your signup request is pending admin approval." };
+      }
+
       const customerUser: AppUser = {
         id: matchedCustomer.id,
         name: matchedCustomer.name,

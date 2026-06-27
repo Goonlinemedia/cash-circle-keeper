@@ -27,6 +27,7 @@ export interface Customer {
   status: CustomerStatus;
   createdAt: string;
   ajoPackageId?: string;
+  isApproved?: boolean;
 }
 
 export type TxnType = "IN" | "OUT";
@@ -95,6 +96,7 @@ export async function fetchFromSupabase() {
         status: c.status as CustomerStatus,
         createdAt: c.created_at,
         ajoPackageId: c.ajo_package_id || undefined,
+        isApproved: c.is_approved !== false,
       })),
       transactions: (txns || []).map((t: any) => ({
         id: t.id,
@@ -147,6 +149,7 @@ export async function addCustomer(input: Omit<Customer, "id" | "createdAt">): Pr
     ...input,
     id: tempId,
     createdAt: tempCreatedAt,
+    isApproved: input.isApproved !== false,
   };
 
   // Optimistic update
@@ -171,6 +174,7 @@ export async function addCustomer(input: Omit<Customer, "id" | "createdAt">): Pr
         status: input.status,
         created_at: tempCreatedAt,
         ajo_package_id: input.ajoPackageId || null,
+        is_approved: input.isApproved !== false,
       },
     ])
     .then(({ error }) => {
@@ -208,6 +212,7 @@ export async function updateCustomer(id: string, patch: Partial<Customer>): Prom
   if (patch.startDate !== undefined) dbPatch.start_date = patch.startDate;
   if (patch.status !== undefined) dbPatch.status = patch.status;
   if (patch.ajoPackageId !== undefined) dbPatch.ajo_package_id = patch.ajoPackageId || null;
+  if (patch.isApproved !== undefined) dbPatch.is_approved = patch.isApproved;
 
   supabase
     .from("customers")

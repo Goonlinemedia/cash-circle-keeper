@@ -15,7 +15,7 @@ import { formatNaira, formatDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -48,7 +48,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Plus, MoreHorizontal, Search, Eye, Pencil, Power, Trash2 } from "lucide-react";
+import { Plus, MoreHorizontal, Search, Eye, Pencil, Power, Trash2, Check, X } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/customers")({
@@ -83,16 +83,24 @@ function CustomersPage() {
   const [editing, setEditing] = useState<Customer | null>(null);
   const [open, setOpen] = useState(false);
 
+  const approvedCustomers = useMemo(() => {
+    return (db.customers || []).filter((c) => c.isApproved !== false);
+  }, [db.customers]);
+
+  const pendingCustomers = useMemo(() => {
+    return (db.customers || []).filter((c) => c.isApproved === false);
+  }, [db.customers]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return db.customers;
-    return db.customers.filter(
+    if (!q) return approvedCustomers;
+    return approvedCustomers.filter(
       (c) =>
         c.name.toLowerCase().includes(q) ||
         c.phone.includes(q) ||
         c.address.toLowerCase().includes(q),
     );
-  }, [db.customers, search]);
+  }, [approvedCustomers, search]);
 
   const openAdd = () => {
     setEditing(null);
@@ -103,8 +111,96 @@ function CustomersPage() {
     setOpen(true);
   };
 
+  const handleApprove = async (id: string, name: string) => {
+    try {
+      await updateCustomer(id, { isApproved: true });
+      toast.success(`Signup request for "${name}" approved successfully`);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to approve customer");
+    }
+  };
+
+  const handleDecline = async (id: string, name: string) => {
+    if (confirm(`Are you sure you want to decline and delete the signup request for "${name}"?`)) {
+      try {
+        await deleteCustomer(id);
+        toast.success(`Signup request for "${name}" declined`);
+      } catch (err: any) {
+        toast.error(err.message || "Failed to decline request");
+      }
+    }
+  };
+
   return (
-    <div className="space-y-4 max-w-7xl">
+    <div className="space-y-6 max-w-7xl">
+      {/* Pending Signups Panel */}
+      {pendingCustomers.length > 0 && (
+        <Card className="border-warning/40 bg-warning/5 overflow-hidden">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg font-bold flex items-center gap-2 text-warning-foreground">
+              <Plus className="size-5 rotate-45 text-warning" /> Pending Customer Signups ({pendingCustomers.length})
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Review and approve or decline these new customer registration requests.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0 border-t border-warning/15">
+            <Table>
+              <TableHeader className="bg-warning/10">
+                <TableRow>
+                  <TableHead className="text-warning-foreground font-semibold">Name</TableHead>
+                  <TableHead className="text-warning-foreground font-semibold">Phone</TableHead>
+                  <TableHead className="text-warning-foreground font-semibold">Address</TableHead>
+                  <TableHead className="text-warning-foreground font-semibold">Requested Plan</TableHead>
+                  <TableHead className="text-right text-warning-foreground font-semibold">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pendingCustomers.map((c) => (
+                  <TableRow key={c.id} className="hover:bg-warning/10 border-warning/15">
+                    <TableCell>
+                      <div className="flex items-center gap-2.5">
+                        <div className="size-7 rounded-full bg-warning/20 text-warning-foreground grid place-items-center text-xs font-bold">
+                          {c.name.slice(0, 1).toUpperCase()}
+                        </div>
+                        <span className="font-semibold text-sm text-foreground">{c.name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-xs font-mono">{c.phone}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{c.address || "No address provided"}</TableCell>
+                    <TableCell>
+                      <div className="font-medium text-xs">
+                        {c.ajoPackageId ? (db.ajoPackages?.find(p => p.id === c.ajoPackageId)?.name || "Plan") : "Custom Plan"}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {formatNaira(c.contributionAmount)} · {c.frequency}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right space-x-1.5 pr-4">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleApprove(c.id, c.name)}
+                        className="h-8 border-success/40 bg-success/5 hover:bg-success/20 text-success gap-1 text-xs"
+                      >
+                        <Check className="size-3.5" /> Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDecline(c.id, c.name)}
+                        className="h-8 hover:bg-destructive/15 text-destructive hover:text-destructive gap-1 text-xs"
+                      >
+                        <X className="size-3.5" /> Decline
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
       <div className="flex flex-wrap items-center gap-3 justify-between">
         <div className="relative flex-1 max-w-sm">
           <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
