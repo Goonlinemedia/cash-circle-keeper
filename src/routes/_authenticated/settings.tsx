@@ -30,7 +30,7 @@ function SettingsPage() {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<Role>("Collector");
 
-  const onAdd = (e: React.FormEvent) => {
+  const onAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim() || !password.trim()) {
       return toast.error("Fill in all fields");
@@ -38,12 +38,16 @@ function SettingsPage() {
     if (users.some((u) => u.email.toLowerCase() === email.trim().toLowerCase())) {
       return toast.error("Email already exists");
     }
-    addUser({ name: name.trim(), email: email.trim(), password, role });
-    toast.success("User added");
-    setName("");
-    setEmail("");
-    setPassword("");
-    setRole("Collector");
+    const res = await addUser({ name: name.trim(), email: email.trim(), password, role });
+    if (res.ok) {
+      toast.success("User added");
+      setName("");
+      setEmail("");
+      setPassword("");
+      setRole("Collector");
+    } else {
+      toast.error(res.error || "Could not add user");
+    }
   };
 
   return (
@@ -104,10 +108,14 @@ function SettingsPage() {
                     size="icon"
                     variant="ghost"
                     className="size-8 text-muted-foreground hover:text-destructive"
-                    onClick={() => {
+                    onClick={async () => {
                       if (confirm(`Remove ${u.name}?`)) {
-                        removeUser(u.id);
-                        toast.success("User removed");
+                        const res = await removeUser(u.id);
+                        if (res.ok) {
+                          toast.success("User removed");
+                        } else {
+                          toast.error(res.error || "Could not remove user");
+                        }
                       }
                     }}
                   >

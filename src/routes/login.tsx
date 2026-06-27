@@ -22,10 +22,11 @@ function Login() {
   if (!ready) return null;
   if (user) return <Navigate to="/dashboard" replace />;
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const r = login(email, password);
+    setError(null);
+    const r = await login(email, password);
     setLoading(false);
     if (!r.ok) {
       setError(r.error ?? "Login failed");

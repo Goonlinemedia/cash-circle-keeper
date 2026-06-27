@@ -1,7 +1,5 @@
-// Local-storage backed data store for the Ajo MVP.
-// All data lives in the browser. No backend.
-
 import { useSyncExternalStore } from "react";
+import { supabase } from "./supabase";
 
 export type Frequency = "Daily" | "Weekly" | "Monthly";
 export type CustomerStatus = "Active" | "Inactive";
@@ -42,111 +40,61 @@ interface DB {
   transactions: Transaction[];
 }
 
-const KEY = "ajo-mvp-db-v1";
-let cachedDB: DB | null = null;
+let fetched = false;
+let cachedDB: DB = { customers: [], transactions: [] };
 
 function load(): DB {
   if (typeof window === "undefined") return { customers: [], transactions: [] };
-  if (cachedDB) return cachedDB;
+  if (!fetched) {
+    fetched = true;
+    fetchFromSupabase();
+  }
+  return cachedDB;
+}
+
+async function fetchFromSupabase() {
   try {
-    const raw = window.localStorage.getItem(KEY);
-    if (!raw) {
-      cachedDB = seed();
-      return cachedDB;
-    }
-    cachedDB = JSON.parse(raw) as DB;
-    return cachedDB!;
-  } catch {
-    cachedDB = { customers: [], transactions: [] };
-    return cachedDB;
+    const { data: custs } = await supabase
+      .from("customers")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    const { data: txns } = await supabase
+      .from("transactions")
+      .select("*, profiles(name)")
+      .order("date", { ascending: false });
+
+    cachedDB = {
+      customers: (custs || []).map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        phone: c.phone,
+        address: c.address,
+        contributionAmount: Number(c.contribution_amount),
+        frequency: c.frequency as Frequency,
+        startDate: c.start_date,
+        status: c.status as CustomerStatus,
+        createdAt: c.created_at,
+      })),
+      transactions: (txns || []).map((t: any) => ({
+        id: t.id,
+        type: t.type as TxnType,
+        customerId: t.customer_id,
+        amount: Number(t.amount),
+        paymentMethod: t.payment_method as PaymentMethod,
+        withdrawalType: t.withdrawal_type as WithdrawalType,
+        description: t.description,
+        reference: t.reference,
+        date: t.date,
+        createdBy: t.profiles?.name || "unknown",
+        createdAt: t.created_at,
+      })),
+    };
+
+    listeners.forEach((l) => l());
+  } catch (e) {
+    console.error("Error loading data from Supabase:", e);
   }
-}
-
-function save(db: DB) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(KEY, JSON.stringify(db));
-  cachedDB = { ...db };
-  listeners.forEach((l) => l());
-}
-
-function seed(): DB {
-  const today = new Date().toISOString();
-  const customers: Customer[] = [
-    {
-      id: crypto.randomUUID(),
-      name: "John Ade",
-      phone: "08031234567",
-      address: "Surulere, Lagos",
-      contributionAmount: 5000,
-      frequency: "Daily",
-      startDate: today.slice(0, 10),
-      status: "Active",
-      createdAt: today,
-    },
-    {
-      id: crypto.randomUUID(),
-      name: "Mary James",
-      phone: "08109876543",
-      address: "Yaba, Lagos",
-      contributionAmount: 3000,
-      frequency: "Daily",
-      startDate: today.slice(0, 10),
-      status: "Active",
-      createdAt: today,
-    },
-    {
-      id: crypto.randomUUID(),
-      name: "Tunde Bello",
-      phone: "08025556677",
-      address: "Ikeja, Lagos",
-      contributionAmount: 10000,
-      frequency: "Weekly",
-      startDate: today.slice(0, 10),
-      status: "Active",
-      createdAt: today,
-    },
-  ];
-
-  const txns: Transaction[] = [
-    {
-      id: crypto.randomUUID(),
-      type: "IN",
-      customerId: customers[0].id,
-      amount: 5000,
-      paymentMethod: "Cash",
-      date: today,
-      createdBy: "admin",
-      createdAt: today,
-    },
-    {
-      id: crypto.randomUUID(),
-      type: "IN",
-      customerId: customers[1].id,
-      amount: 3000,
-      paymentMethod: "Transfer",
-      reference: "TRX-001",
-      date: today,
-      createdBy: "admin",
-      createdAt: today,
-    },
-    {
-      id: crypto.randomUUID(),
-      type: "OUT",
-      amount: 2000,
-      withdrawalType: "Office Expense",
-      description: "Printing receipts",
-      date: today,
-      createdBy: "admin",
-      createdAt: today,
-    },
-  ];
-
-  const db = { customers, transactions: txns };
-  if (typeof window !== "undefined") {
-    window.localStorage.setItem(KEY, JSON.stringify(db));
-  }
-  cachedDB = db;
-  return db;
 }
 
 // ---- Reactive subscription ----
@@ -161,18 +109,87 @@ export function useDB(): DB {
 }
 
 // ---- Mutations ----
-export function addCustomer(input: Omit<Customer, "id" | "createdAt">): Customer {
-  const db = load();
-  const c: Customer = { ...input, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
-  db.customers.unshift(c);
-  save(db);
-  return c;
+export async function addCustomer(input: Omit<Customer, "id" | "createdAt">): Promise<Customer> {
+  const tempId = crypto.randomUUID();
+  const tempCreatedAt = new Date().toISOString();
+  const newCustomer: Customer = {
+    ...input,
+    id: tempId,
+    createdAt: tempCreatedAt,
+  };
+
+  // Optimistic update
+  cachedDB = {
+    ...cachedDB,
+    customers: [newCustomer, ...cachedDB.customers],
+  };
+  listeners.forEach((l) => l());
+
+  // Supabase background write
+  supabase
+    .from("customers")
+    .insert([
+      {
+        id: tempId,
+        name: input.name,
+        phone: input.phone,
+        address: input.address,
+        contribution_amount: input.contributionAmount,
+        frequency: input.frequency,
+        start_date: input.startDate,
+        status: input.status,
+        created_at: tempCreatedAt,
+      },
+    ])
+    .then(({ error }) => {
+      if (error) {
+        console.error("Error adding customer to Supabase:", error);
+        // Rollback
+        cachedDB = {
+          ...cachedDB,
+          customers: cachedDB.customers.filter((c) => c.id !== tempId),
+        };
+        listeners.forEach((l) => l());
+      }
+    });
+
+  return newCustomer;
 }
 
-export function updateCustomer(id: string, patch: Partial<Customer>) {
-  const db = load();
-  db.customers = db.customers.map((c) => (c.id === id ? { ...c, ...patch } : c));
-  save(db);
+export async function updateCustomer(id: string, patch: Partial<Customer>): Promise<void> {
+  const oldCustomers = [...cachedDB.customers];
+
+  // Optimistic update
+  cachedDB = {
+    ...cachedDB,
+    customers: cachedDB.customers.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+  };
+  listeners.forEach((l) => l());
+
+  const dbPatch: any = {};
+  if (patch.name !== undefined) dbPatch.name = patch.name;
+  if (patch.phone !== undefined) dbPatch.phone = patch.phone;
+  if (patch.address !== undefined) dbPatch.address = patch.address;
+  if (patch.contributionAmount !== undefined)
+    dbPatch.contribution_amount = patch.contributionAmount;
+  if (patch.frequency !== undefined) dbPatch.frequency = patch.frequency;
+  if (patch.startDate !== undefined) dbPatch.start_date = patch.startDate;
+  if (patch.status !== undefined) dbPatch.status = patch.status;
+
+  supabase
+    .from("customers")
+    .update(dbPatch)
+    .eq("id", id)
+    .then(({ error }) => {
+      if (error) {
+        console.error("Error updating customer in Supabase:", error);
+        cachedDB = {
+          ...cachedDB,
+          customers: oldCustomers,
+        };
+        listeners.forEach((l) => l());
+      }
+    });
 }
 
 export function deactivateCustomer(id: string) {
@@ -183,24 +200,116 @@ export function activateCustomer(id: string) {
   updateCustomer(id, { status: "Active" });
 }
 
-export function deleteCustomer(id: string) {
-  const db = load();
-  db.customers = db.customers.filter((c) => c.id !== id);
-  save(db);
+export async function deleteCustomer(id: string): Promise<void> {
+  const oldCustomers = [...cachedDB.customers];
+
+  // Optimistic update
+  cachedDB = {
+    ...cachedDB,
+    customers: cachedDB.customers.filter((c) => c.id !== id),
+  };
+  listeners.forEach((l) => l());
+
+  supabase
+    .from("customers")
+    .delete()
+    .eq("id", id)
+    .then(({ error }) => {
+      if (error) {
+        console.error("Error deleting customer in Supabase:", error);
+        cachedDB = {
+          ...cachedDB,
+          customers: oldCustomers,
+        };
+        listeners.forEach((l) => l());
+      }
+    });
 }
 
-export function addTransaction(input: Omit<Transaction, "id" | "createdAt">): Transaction {
-  const db = load();
-  const t: Transaction = { ...input, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
-  db.transactions.unshift(t);
-  save(db);
-  return t;
+export async function addTransaction(
+  input: Omit<Transaction, "id" | "createdAt">,
+): Promise<Transaction> {
+  const tempId = crypto.randomUUID();
+  const tempCreatedAt = new Date().toISOString();
+
+  let creatorId: string | null = null;
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    creatorId = session?.user?.id || null;
+  } catch {
+    // ignore
+  }
+
+  const newTxn: Transaction = {
+    ...input,
+    id: tempId,
+    createdAt: tempCreatedAt,
+  };
+
+  // Optimistic update
+  cachedDB = {
+    ...cachedDB,
+    transactions: [newTxn, ...cachedDB.transactions],
+  };
+  listeners.forEach((l) => l());
+
+  supabase
+    .from("transactions")
+    .insert([
+      {
+        id: tempId,
+        customer_id: input.customerId || null,
+        type: input.type,
+        amount: input.amount,
+        payment_method: input.paymentMethod || null,
+        withdrawal_type: input.withdrawalType || null,
+        description: input.description || null,
+        reference: input.reference || null,
+        date: input.date,
+        created_by: creatorId,
+        created_at: tempCreatedAt,
+      },
+    ])
+    .then(({ error }) => {
+      if (error) {
+        console.error("Error adding transaction to Supabase:", error);
+        cachedDB = {
+          ...cachedDB,
+          transactions: cachedDB.transactions.filter((t) => t.id !== tempId),
+        };
+        listeners.forEach((l) => l());
+      }
+    });
+
+  return newTxn;
 }
 
-export function deleteTransaction(id: string) {
-  const db = load();
-  db.transactions = db.transactions.filter((t) => t.id !== id);
-  save(db);
+export async function deleteTransaction(id: string): Promise<void> {
+  const oldTxns = [...cachedDB.transactions];
+
+  // Optimistic update
+  cachedDB = {
+    ...cachedDB,
+    transactions: cachedDB.transactions.filter((t) => t.id !== id),
+  };
+  listeners.forEach((l) => l());
+
+  supabase
+    .from("transactions")
+    .delete()
+    .eq("id", id)
+    .then(({ error }) => {
+      if (error) {
+        console.error("Error deleting transaction from Supabase:", error);
+        cachedDB = {
+          ...cachedDB,
+          transactions: oldTxns,
+        };
+        listeners.forEach((l) => l());
+      }
+    });
 }
 
 // ---- Selectors ----
@@ -221,10 +330,14 @@ export function customerById(db: DB, id?: string): Customer | undefined {
   return db.customers.find((c) => c.id === id);
 }
 
-export function resetDB() {
-  if (typeof window === "undefined") return;
-  window.localStorage.removeItem(KEY);
-  cachedDB = null;
-  seed();
+export async function resetDB() {
+  cachedDB = { customers: [], transactions: [] };
   listeners.forEach((l) => l());
+
+  try {
+    await supabase.from("transactions").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    await supabase.from("customers").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  } catch (e) {
+    console.error("Error resetting database:", e);
+  }
 }
