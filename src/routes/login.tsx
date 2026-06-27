@@ -95,9 +95,9 @@ function Login() {
             </div>
 
             <div className="mt-4 pt-4 border-t text-center text-xs text-muted-foreground">
-              Are you a staff member?{" "}
-              <Link to="/staff" className="text-primary hover:underline font-semibold">
-                Sign in to Staff Portal
+              Are you an Admin?{" "}
+              <Link to="/admin" className="text-primary hover:underline font-semibold">
+                Sign in to Admin Portal
               </Link>
             </div>
           </CardContent>

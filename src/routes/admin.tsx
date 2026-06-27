@@ -129,18 +129,12 @@ function AdminLogin() {
               <div>Admin — admin@ajo.app / admin123</div>
             </div>
 
-            <div className="mt-4 pt-4 border-t flex items-center justify-between text-xs text-muted-foreground">
+            <div className="mt-4 pt-4 border-t text-center">
               <Link
                 to="/login"
-                className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors"
+                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
-                <ArrowLeft className="size-3.5" /> Customer Login
-              </Link>
-              <Link
-                to="/staff"
-                className="text-primary hover:underline font-semibold"
-              >
-                Collector Login
+                <ArrowLeft className="size-3.5" /> Go to Customer Portal
               </Link>
             </div>
           </CardContent>
