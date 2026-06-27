@@ -43,7 +43,7 @@ function Login() {
           </div>
           <div className="text-left">
             <div className="font-display text-2xl font-bold text-primary leading-none">
-              Ajo Manager
+              Debbby Ajo Manager
             </div>
             <div className="text-xs text-muted-foreground mt-1">Thrift collection, simplified</div>
           </div>

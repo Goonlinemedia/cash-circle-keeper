@@ -48,7 +48,7 @@ export function AppSidebar() {
           </div>
           <div className="min-w-0 group-data-[collapsible=icon]:hidden">
             <div className="font-display font-bold text-base leading-tight truncate">
-              Ajo Manager
+              Debbby Ajo Manager
             </div>
             <div className="text-[11px] text-sidebar-foreground/70 truncate">Thrift collection</div>
           </div>

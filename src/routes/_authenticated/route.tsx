@@ -29,7 +29,7 @@ function AuthLayout() {
     "/settings": "Settings",
   };
   const title =
-    Object.entries(titleMap).find(([k]) => pathname.startsWith(k))?.[1] ?? "Ajo Manager";
+    Object.entries(titleMap).find(([k]) => pathname.startsWith(k))?.[1] ?? "Debbby Ajo Manager";
 
   return (
     <SidebarProvider>
