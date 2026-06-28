@@ -10,6 +10,7 @@ import {
   type Customer,
   type Frequency,
   type CustomerStatus,
+  getCustomerAjoProgress,
 } from "@/lib/store";
 import { formatNaira, formatDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -229,6 +230,7 @@ function CustomersPage() {
                 <TableHead>Name</TableHead>
                 <TableHead>Phone</TableHead>
                 <TableHead>Plan</TableHead>
+                <TableHead>Ajo Progress</TableHead>
                 <TableHead>Start date</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -238,7 +240,7 @@ function CustomersPage() {
               {filtered.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={6}
+                    colSpan={7}
                     className="text-center text-sm text-muted-foreground py-10"
                   >
                     No customers found.
@@ -266,6 +268,35 @@ function CustomersPage() {
                       <div className="text-xs text-muted-foreground tabular-nums">
                         {formatNaira(c.contributionAmount)} · {c.frequency}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      {(() => {
+                        const progress = getCustomerAjoProgress(db, c);
+                        if (!progress.hasPackage) {
+                          return <span className="text-xs text-muted-foreground">No plan</span>;
+                        }
+                        if (!progress.durationDays) {
+                          return (
+                            <div className="text-xs text-muted-foreground">
+                              Ongoing · <span className="font-semibold text-foreground">{progress.paidDays}</span> payments
+                            </div>
+                          );
+                        }
+                        return (
+                          <div className="space-y-1 w-[130px]">
+                            <div className="flex justify-between text-[10px] font-medium text-muted-foreground">
+                              <span className="font-semibold text-primary">{progress.progressPercent}%</span>
+                              <span>{progress.paidDays}/{progress.durationDays} days</span>
+                            </div>
+                            <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-success transition-all duration-300"
+                                style={{ width: `${progress.progressPercent}%` }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {formatDate(c.startDate)}

@@ -477,6 +477,45 @@ export function customerById(db: DB, id?: string): Customer | undefined {
   return db.customers.find((c) => c.id === id);
 }
 
+export interface AjoProgress {
+  hasPackage: boolean;
+  packageName?: string;
+  durationDays?: number;
+  contributionAmount: number;
+  totalContributed: number;
+  paidDays: number;
+  progressPercent: number;
+  isCompleted: boolean;
+}
+
+export function getCustomerAjoProgress(db: DB, customer: Customer): AjoProgress {
+  const pkg = customer.ajoPackageId ? db.ajoPackages.find((p) => p.id === customer.ajoPackageId) : undefined;
+  
+  // Calculate total contributed (IN transactions)
+  const custTxns = db.transactions.filter((t) => t.customerId === customer.id && t.type === "IN");
+  const totalContributed = custTxns.reduce((s, t) => s + t.amount, 0);
+  
+  const contributionAmount = customer.contributionAmount || pkg?.contributionAmount || 0;
+  
+  // Count how many complete units have been paid
+  const divisor = contributionAmount || 1;
+  const paidDays = Math.floor(totalContributed / divisor);
+  
+  const durationDays = pkg?.durationDays;
+  const progressPercent = durationDays ? Math.min(100, Math.round((paidDays / durationDays) * 100)) : 0;
+  
+  return {
+    hasPackage: !!pkg,
+    packageName: pkg?.name,
+    durationDays,
+    contributionAmount,
+    totalContributed,
+    paidDays,
+    progressPercent,
+    isCompleted: durationDays ? paidDays >= durationDays : false,
+  };
+}
+
 export async function resetDB() {
   cachedDB = { customers: [], transactions: [], ajoPackages: [] };
   listeners.forEach((l) => l());

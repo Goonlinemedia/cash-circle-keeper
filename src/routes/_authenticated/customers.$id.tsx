@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo } from "react";
-import { useDB, customerById, totalIn } from "@/lib/store";
+import { useDB, customerById, totalIn, getCustomerAjoProgress } from "@/lib/store";
 import { formatNaira, formatDate } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,7 @@ function CustomerLedger() {
   }
 
   const runningTotal = totalIn(payments);
+  const progressInfo = getCustomerAjoProgress(db, customer);
 
   return (
     <div className="space-y-4 max-w-4xl">
@@ -108,6 +109,48 @@ function CustomerLedger() {
           </div>
         </CardContent>
       </Card>
+
+      {progressInfo.hasPackage && (
+        <Card className="border-border/60 overflow-hidden relative bg-card/50 backdrop-blur">
+          <div className="absolute top-0 left-0 w-1.5 h-full bg-primary" />
+          <CardContent className="py-5 space-y-3.5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h3 className="font-bold text-sm text-foreground">Ajo Package Progress</h3>
+                <p className="text-xs text-muted-foreground">Plan: {progressInfo.packageName}</p>
+              </div>
+              {progressInfo.durationDays ? (
+                <Badge className="bg-primary/10 text-primary hover:bg-primary/15 border-none font-semibold text-xs py-0.5 px-2">
+                  {progressInfo.progressPercent}% Complete
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-xs py-0.5 px-2">
+                  Ongoing Plan
+                </Badge>
+              )}
+            </div>
+
+            {progressInfo.durationDays ? (
+              <div className="space-y-2">
+                <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full bg-success transition-all duration-300"
+                    style={{ width: `${progressInfo.progressPercent}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Paid: <strong>{progressInfo.paidDays}</strong> of {progressInfo.durationDays} periods</span>
+                  <span>Contribution: <strong>{formatNaira(progressInfo.contributionAmount)}</strong></span>
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                This customer is on an ongoing/flexible plan. They have made <strong>{progressInfo.paidDays}</strong> payments.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

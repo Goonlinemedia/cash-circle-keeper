@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
-import { useDB, cashBalance, totalIn, totalOut, customerById } from "@/lib/store";
+import { useDB, cashBalance, totalIn, totalOut, customerById, getCustomerAjoProgress } from "@/lib/store";
 import { formatNaira, isSameDay, todayISO } from "@/lib/format";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   ArrowDownToLine,
@@ -14,6 +14,7 @@ import {
   Phone,
   MapPin,
   Calendar,
+  Target,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
@@ -165,53 +166,105 @@ function Dashboard() {
         </CardContent>
       </Card>
 
-      {/* Pending today */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Pending today</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {activeCustomers.length === 0 ? (
-            <div className="text-sm text-muted-foreground py-6 text-center">
-              No active customers yet.{" "}
-              <Link to="/customers" className="text-primary underline">
-                Add one
-              </Link>
-              .
-            </div>
-          ) : (
-            <div className="grid gap-2 sm:grid-cols-2">
-              {activeCustomers
-                .filter((c) => !paidTodayIds.has(c.id))
-                .slice(0, 8)
-                .map((c) => (
-                  <div
-                    key={c.id}
-                    className="flex items-center justify-between rounded-md border bg-card px-3 py-2"
-                  >
-                    <div className="min-w-0">
-                      <div className="font-medium truncate">{c.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {formatNaira(c.contributionAmount)} · {c.frequency}
-                      </div>
-                    </div>
-                    <Badge
-                      variant="outline"
-                      className="border-accent/50 text-accent-foreground bg-accent/15"
+      {/* Pending and Progress Row */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Pending today */}
+        <Card className="flex flex-col">
+          <CardHeader>
+            <CardTitle>Pending today</CardTitle>
+          </CardHeader>
+          <CardContent className="flex-1">
+            {activeCustomers.length === 0 ? (
+              <div className="text-sm text-muted-foreground py-6 text-center">
+                No active customers yet.{" "}
+                <Link to="/customers" className="text-primary underline">
+                  Add one
+                </Link>
+                .
+              </div>
+            ) : (
+              <div className="grid gap-2">
+                {activeCustomers
+                  .filter((c) => !paidTodayIds.has(c.id))
+                  .slice(0, 8)
+                  .map((c) => (
+                    <div
+                      key={c.id}
+                      className="flex items-center justify-between rounded-md border bg-card px-3 py-2"
                     >
-                      Pending
-                    </Badge>
+                      <div className="min-w-0">
+                        <div className="font-medium truncate">{c.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {formatNaira(c.contributionAmount)} · {c.frequency}
+                        </div>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className="border-accent/50 text-accent-foreground bg-accent/15"
+                      >
+                        Pending
+                      </Badge>
+                    </div>
+                  ))}
+                {pending === 0 && (
+                  <div className="text-sm text-success font-medium py-2">
+                    Every active customer has paid today. 🎉
                   </div>
-                ))}
-              {pending === 0 && (
-                <div className="sm:col-span-2 text-sm text-success font-medium py-2">
-                  Every active customer has paid today. 🎉
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Customer Ajo Progress Tracker */}
+        <Card className="flex flex-col">
+          <CardHeader>
+            <CardTitle>Customer Ajo Progress</CardTitle>
+            <CardDescription>Overall completion of duration-based plans.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex-1">
+            {db.customers.filter((c) => c.status === "Active" && c.ajoPackageId).length === 0 ? (
+              <div className="text-sm text-muted-foreground py-8 text-center">
+                No active customers enrolled in Ajo packages.
+              </div>
+            ) : (
+              <div className="space-y-4 max-h-[350px] overflow-y-auto pr-1">
+                {db.customers
+                  .filter((c) => c.status === "Active" && c.ajoPackageId)
+                  .map((c) => {
+                    const progress = getCustomerAjoProgress(db, c);
+                    if (!progress.durationDays) return null;
+                    return (
+                      <div key={c.id} className="space-y-1.5 border-b pb-3 last:border-0 last:pb-0">
+                        <div className="flex justify-between items-center text-sm">
+                          <div className="font-medium truncate max-w-[180px]">
+                            <Link to="/customers/$id" params={{ id: c.id }} className="hover:underline">
+                              {c.name}
+                            </Link>
+                          </div>
+                          <span className="text-xs text-muted-foreground font-mono font-semibold">
+                            {progress.paidDays}/{progress.durationDays} days ({progress.progressPercent}%)
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center text-[11px] text-muted-foreground">
+                          <span>{progress.packageName}</span>
+                          <span>{formatNaira(progress.totalContributed)} saved</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-success transition-all duration-300"
+                            style={{ width: `${progress.progressPercent}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })
+                  .filter(Boolean)}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
@@ -273,7 +326,12 @@ function CustomerDashboard() {
       .sort((a, b) => b.date.localeCompare(a.date));
   }, [db.transactions, user?.id]);
 
-  if (!customer) {
+  const progressInfo = useMemo(() => {
+    if (!customer) return null;
+    return getCustomerAjoProgress(db, customer);
+  }, [db, customer]);
+
+  if (!customer || !progressInfo) {
     return (
       <div className="max-w-xl mx-auto py-10">
         <Card>
@@ -312,7 +370,7 @@ function CustomerDashboard() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="relative overflow-hidden border-border/40 shadow-sm bg-gradient-to-br from-card to-success/5">
           <CardContent className="pt-6">
             <div className="flex items-start justify-between">
@@ -373,6 +431,48 @@ function CustomerDashboard() {
             </div>
           </CardContent>
         </Card>
+
+        <Card className="relative overflow-hidden border-border/40 shadow-sm bg-gradient-to-br from-card to-primary/5">
+          <CardContent className="pt-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Ajo Plan Progress
+                </p>
+                {progressInfo.hasPackage && progressInfo.durationDays ? (
+                  <>
+                    <h3 className="mt-2 font-display text-2xl font-bold text-primary tabular-nums">
+                      {progressInfo.progressPercent}%
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {progressInfo.paidDays} of {progressInfo.durationDays} days paid
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <h3 className="mt-2 font-display text-2xl font-bold text-muted-foreground">
+                      Ongoing
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {progressInfo.paidDays} payments recorded
+                    </p>
+                  </>
+                )}
+              </div>
+              <div className="size-10 rounded-xl bg-primary/10 text-primary grid place-items-center">
+                <Target className="size-5" />
+              </div>
+            </div>
+            {progressInfo.hasPackage && progressInfo.durationDays && (
+              <div className="mt-4 h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-all duration-300"
+                  style={{ width: `${progressInfo.progressPercent}%` }}
+                />
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
@@ -419,6 +519,40 @@ function CustomerDashboard() {
                 </span>
               </div>
             </div>
+
+            {progressInfo.hasPackage && (
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-semibold text-foreground">Ajo Progress Tracker</span>
+                  {progressInfo.durationDays && (
+                    <Badge className="bg-primary/20 text-primary hover:bg-primary/25 border-none font-semibold text-xs">
+                      {progressInfo.progressPercent}%
+                    </Badge>
+                  )}
+                </div>
+                {progressInfo.durationDays ? (
+                  <>
+                    <div className="h-2.5 w-full bg-secondary rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-primary transition-all duration-300"
+                        style={{ width: `${progressInfo.progressPercent}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-xs text-muted-foreground font-mono">
+                      <span>Paid: {progressInfo.paidDays} days</span>
+                      <span>Target: {progressInfo.durationDays} days</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-snug">
+                      You have contributed {progressInfo.paidDays} out of {progressInfo.durationDays} periods. Keep it up!
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Ongoing saving circle plan with <strong>{progressInfo.paidDays}</strong> contribution collections.
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="space-y-2.5 text-xs text-muted-foreground px-1">
               <div className="flex items-center gap-2">

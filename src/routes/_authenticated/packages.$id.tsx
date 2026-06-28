@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo } from "react";
-import { useDB } from "@/lib/store";
+import { useDB, getCustomerAjoProgress } from "@/lib/store";
 import { formatNaira, formatDate } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -65,15 +65,15 @@ function PackageDetailsPage() {
       const custIn = custTxns.filter((t) => t.type === "IN").reduce((s, t) => s + t.amount, 0);
       const custOut = custTxns.filter((t) => t.type === "OUT").reduce((s, t) => s + t.amount, 0);
       const savings = custIn - custOut;
-      const progress = targetPerCustomer > 0 ? Math.min(100, Math.round((savings / targetPerCustomer) * 100)) : 0;
+      const progressInfo = getCustomerAjoProgress(db, cust);
 
       return {
         ...cust,
         savings,
-        progress,
+        progressInfo,
       };
     });
-  }, [enrolledCustomers, db.transactions, targetPerCustomer]);
+  }, [enrolledCustomers, db, db.transactions]);
 
   if (!pkg) {
     return (
@@ -258,7 +258,7 @@ function PackageDetailsPage() {
                 <TableHead>Phone</TableHead>
                 <TableHead>Join Date</TableHead>
                 <TableHead>Total Contributed</TableHead>
-                {pkg.targetAmount && <TableHead>Target Progress</TableHead>}
+                <TableHead>Ajo Progress</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ledger</TableHead>
               </TableRow>
@@ -267,7 +267,7 @@ function PackageDetailsPage() {
               {participantsData.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={pkg.targetAmount ? 7 : 6}
+                    colSpan={7}
                     className="text-center text-sm text-muted-foreground py-12"
                   >
                     No customers enrolled in this package yet. Go to the customers list to enroll users.
@@ -289,22 +289,26 @@ function PackageDetailsPage() {
                     <TableCell className="font-mono text-sm font-semibold text-success tabular-nums">
                       {formatNaira(c.savings)}
                     </TableCell>
-                    {pkg.targetAmount && (
-                      <TableCell className="w-56">
+                    <TableCell className="w-56">
+                      {c.progressInfo.durationDays ? (
                         <div className="space-y-1 max-w-[200px]">
                           <div className="flex justify-between text-[10px] font-medium font-mono text-muted-foreground">
-                            <span>{formatNaira(c.savings)}</span>
-                            <span>{c.progress}%</span>
+                            <span className="font-semibold text-primary">{c.progressInfo.progressPercent}%</span>
+                            <span>{c.progressInfo.paidDays}/{c.progressInfo.durationDays} days</span>
                           </div>
                           <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
                             <div
-                              className="h-full bg-success rounded-full"
-                              style={{ width: `${c.progress}%` }}
+                              className="h-full bg-success rounded-full transition-all duration-300"
+                              style={{ width: `${c.progressInfo.progressPercent}%` }}
                             />
                           </div>
                         </div>
-                      </TableCell>
-                    )}
+                      ) : (
+                        <span className="text-xs text-muted-foreground font-medium">
+                          Ongoing ({c.progressInfo.paidDays} payments)
+                        </span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <Badge
                         variant="outline"
