@@ -35,9 +35,6 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const { user, ready } = useAuth();
-  if (!ready) return null;
-  if (user) return <Navigate to="/dashboard" replace />;
   return <Landing />;
 }
 
