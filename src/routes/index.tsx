@@ -1,5 +1,4 @@
-import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
-import { useAuth } from "@/lib/auth";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
