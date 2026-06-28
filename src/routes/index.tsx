@@ -24,6 +24,8 @@ import {
   Twitter,
   Instagram,
   Facebook,
+  Mail,
+  MapPin,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -786,28 +788,199 @@ function FinalCTA() {
 
 /* ---------- Footer ---------- */
 
+const footerData = {
+  facebookLink: '#',
+  instaLink: '#',
+  twitterLink: '#',
+  services: {
+    daily: '/login',
+    weekly: '/login',
+    monthly: '/login',
+    target: '/login',
+  },
+  about: {
+    features: '#features',
+    how: '#how',
+    faq: '#faq',
+    privacy: '#',
+  },
+  help: {
+    faqs: '#faq',
+    support: '#',
+    livechat: '#',
+  },
+  contact: {
+    email: 'support@debbbyajo.com',
+    phone: '+234 812 345 6789',
+    address: 'Lagos, Nigeria',
+  },
+  company: {
+    name: 'Debbby Ajo',
+    description:
+      'Join Debbby Ajo — a trusted digital thrift platform where your daily, weekly, or monthly savings are securely recorded and visible in real time.',
+  },
+};
+
 function Footer() {
+  const socialLinks = [
+    { icon: Facebook, label: 'Facebook', href: footerData.facebookLink },
+    { icon: Instagram, label: 'Instagram', href: footerData.instaLink },
+    { icon: Twitter, label: 'Twitter', href: footerData.twitterLink },
+  ];
+
+  const aboutLinks = [
+    { text: 'Features', href: footerData.about.features },
+    { text: 'How It Works', href: footerData.about.how },
+    { text: 'FAQs', href: footerData.about.faq },
+    { text: 'Privacy Policy', href: footerData.about.privacy },
+  ];
+
+  const serviceLinks = [
+    { text: 'Daily Savings', href: footerData.services.daily },
+    { text: 'Weekly Contributions', href: footerData.services.weekly },
+    { text: 'Monthly Thrift', href: footerData.services.monthly },
+    { text: 'Target Savings', href: footerData.services.target },
+  ];
+
+  const helpfulLinks = [
+    { text: 'Help Center', href: footerData.help.faqs },
+    { text: 'Customer Support', href: footerData.help.support },
+    { text: 'Live Chat', href: footerData.help.livechat, hasIndicator: true },
+  ];
+
+  const contactInfo = [
+    { icon: Mail, text: footerData.contact.email },
+    { icon: Phone, text: footerData.contact.phone },
+    { icon: MapPin, text: footerData.contact.address, isAddress: true },
+  ];
+
   return (
-    <footer className="border-t border-border/60 bg-card">
-      <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 py-10 text-sm text-muted-foreground md:flex-row">
-        <div className="flex items-center gap-2">
-          <div className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-primary to-secondary text-primary-foreground">
-            <span className="font-display text-sm font-bold">D</span>
+    <footer className="border-t border-zinc-900 bg-zinc-950 text-zinc-100 mt-16 w-full">
+      <div className="mx-auto max-w-6xl px-4 pt-16 pb-8 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <div className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-primary to-secondary text-primary-foreground shadow-sm">
+                <span className="font-display text-lg font-bold">D</span>
+              </div>
+              <span className="font-display text-xl font-bold tracking-tight text-white">
+                {footerData.company.name}
+              </span>
+            </div>
+
+            <p className="mt-4 max-w-xs text-sm leading-relaxed text-zinc-400">
+              {footerData.company.description}
+            </p>
+
+            <ul className="mt-6 flex gap-4">
+              {socialLinks.map(({ icon: Icon, label, href }) => (
+                <li key={label}>
+                  <a
+                    href={href}
+                    className="grid h-9 w-9 place-items-center rounded-full border border-zinc-800 text-zinc-400 transition-all hover:-translate-y-0.5 hover:border-zinc-500 hover:text-white hover:shadow-sm"
+                    aria-label={label}
+                  >
+                    <Icon className="size-4" />
+                  </a>
+                </li>
+              ))}
+            </ul>
           </div>
-          <span className="font-display font-semibold text-foreground">Debbby Ajo</span>
+
+          <div className="grid grid-cols-2 gap-8 sm:grid-cols-4 lg:col-span-2">
+            <div>
+              <p className="font-display text-sm font-semibold tracking-wider uppercase text-zinc-200">About Us</p>
+              <ul className="mt-4 space-y-2 text-sm">
+                {aboutLinks.map(({ text, href }) => (
+                  <li key={text}>
+                    <a
+                      className="text-zinc-400 transition-colors hover:text-white"
+                      href={href}
+                    >
+                      {text}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <p className="font-display text-sm font-semibold tracking-wider uppercase text-zinc-200">Savings Plans</p>
+              <ul className="mt-4 space-y-2 text-sm">
+                {serviceLinks.map(({ text, href }) => (
+                  <li key={text}>
+                    <Link
+                      className="text-zinc-400 transition-colors hover:text-white"
+                      to={href}
+                    >
+                      {text}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <p className="font-display text-sm font-semibold tracking-wider uppercase text-zinc-200">Helpful Links</p>
+              <ul className="mt-4 space-y-2 text-sm">
+                {helpfulLinks.map(({ text, href, hasIndicator }) => (
+                  <li key={text}>
+                    <a
+                      href={href}
+                      className={
+                        hasIndicator
+                          ? 'group inline-flex items-center gap-1.5'
+                          : 'text-zinc-400 transition-colors hover:text-white'
+                      }
+                    >
+                      <span className={hasIndicator ? 'text-zinc-400 transition-colors group-hover:text-white' : ''}>
+                        {text}
+                      </span>
+                      {hasIndicator && (
+                        <span className="relative flex size-2">
+                          <span className="bg-primary absolute inline-flex h-full w-full animate-ping rounded-full opacity-75" />
+                          <span className="bg-primary relative inline-flex size-2 rounded-full" />
+                        </span>
+                      )}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <p className="font-display text-sm font-semibold tracking-wider uppercase text-zinc-200">Contact Us</p>
+              <ul className="mt-4 space-y-3 text-sm">
+                {contactInfo.map(({ icon: Icon, text, isAddress }) => (
+                  <li key={text}>
+                    <span className="flex items-start gap-2">
+                      <Icon className="text-accent size-4 mt-0.5 shrink-0" />
+                      {isAddress ? (
+                        <address className="text-zinc-400 not-italic leading-normal">
+                          {text}
+                        </address>
+                      ) : (
+                        <span className="text-zinc-400">
+                          {text}
+                        </span>
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
         </div>
-        <p>© {new Date().getFullYear()} Debbby Ajo. Your trusted digital savings partner.</p>
-        <div className="flex items-center gap-2">
-          {[Twitter, Instagram, Facebook].map((I, i) => (
-            <a
-              key={i}
-              href="#"
-              className="grid h-9 w-9 place-items-center rounded-full border border-border/60 text-muted-foreground transition-all hover:-translate-y-0.5 hover:border-secondary hover:text-secondary hover:shadow-sm"
-              aria-label="Social link"
-            >
-              <I className="h-4 w-4" />
-            </a>
-          ))}
+
+        <div className="mt-12 border-t border-zinc-900 pt-6">
+          <div className="text-center sm:flex sm:justify-between sm:text-left">
+            <p className="text-xs text-zinc-500">
+              &copy; {new Date().getFullYear()} {footerData.company.name}. All rights reserved.
+            </p>
+            <p className="mt-2 text-xs text-zinc-500 sm:mt-0">
+              Your trusted digital savings partner.
+            </p>
+          </div>
         </div>
       </div>
     </footer>
